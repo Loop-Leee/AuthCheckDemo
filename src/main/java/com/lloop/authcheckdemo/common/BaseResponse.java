@@ -1,11 +1,14 @@
 package com.lloop.authcheckdemo.common;
 
+import lombok.Data;
+
 import java.io.Serializable;
 
 /**
  * @Author lloop
  * @Create 2024/12/24 23:07
  */
+@Data
 public class BaseResponse<T> implements Serializable {
 
     private int code;

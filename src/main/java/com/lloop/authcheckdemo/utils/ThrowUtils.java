@@ -9,7 +9,7 @@ public class ThrowUtils {
 		throwIf(condition, new BusinessException(errorCode));
 	}
 
-	public final void throwIf(boolean condition, ErrorCode errorCode, String message) {
+	public static void throwIf(boolean condition, ErrorCode errorCode, String message) {
 		throwIf(condition, new BusinessException(errorCode, message));
 	}
 

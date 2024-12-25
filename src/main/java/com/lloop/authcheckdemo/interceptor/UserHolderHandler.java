@@ -2,20 +2,20 @@ package com.lloop.authcheckdemo.interceptor;
 
 import com.lloop.authcheckdemo.model.dto.UserDTO;
 import com.lloop.authcheckdemo.utils.UserHolder;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @Author lloop
  * @Create 2024/12/24 22:01
  */
 @Component
-public class UserInterceptor implements HandlerInterceptor {
+public class UserHolderHandler implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {

@@ -28,10 +28,10 @@ public class UserDTO {
         /**
          * 账号
          */
-        private String useraccount;
+        private String Account;
 
         /**
          * 用户头像
          */
-        private String avatarurl;
+        private String avatarUrl;
 }
