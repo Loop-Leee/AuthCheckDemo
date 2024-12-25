@@ -11,6 +11,7 @@ import com.lloop.authcheckdemo.mapper.UserMapper;
 import com.lloop.authcheckdemo.utils.RedisIdWorker;
 import com.lloop.authcheckdemo.utils.ThrowUtils;
 import jakarta.annotation.Resource;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -70,7 +71,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public String userLogin(UserLoginRequest userLoginRequest) {
-        return "";
+        String account = userLoginRequest.getAccount();
+        String userPassword = userLoginRequest.getUserPassword();
+        ThrowUtils.throwIf(StringUtils.isEmpty(account), ErrorCode.PARAMS_ERROR, "用户名不能为空");
+        ThrowUtils.throwIf(StringUtils.isEmpty(userPassword), ErrorCode.PARAMS_ERROR, "用户密码不能为空");
+        User user = userMapper.selectByAccount(account);
+        ThrowUtils.throwIf(ObjectUtils.isEmpty(user), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
+        ThrowUtils.throwIf(!user.getPassword().equals(userPassword), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
+
+        String cookieId = redisIdWorker.nextId(USER_PREFIX);
+        stringRedisTemplate.opsForValue().set(cookieId, String.valueOf(user.getId()));
+        stringRedisTemplate.expire(cookieId, 30, TimeUnit.MINUTES);
+        return cookieId;
     }
 }
 
