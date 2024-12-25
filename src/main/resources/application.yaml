@@ -3,12 +3,19 @@ spring:
         name: AuthCheckDemo
     datasource:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/yupao?serverTimezone=Asia/Shanghai
+        url: jdbc:mysql://localhost:3306/authcheckdemo?serverTimezone=Asia/Shanghai
         username: root
         password: 123456
+    data:
+        redis:
+            host: localhost
+            port: 6379
+            password: 123456
+            database: 0
     mvc:
         pathmatch:
             matching-strategy: ant_path_matcher
-#myconfig:
-#    username: lloop
-#    password: 123456
+server:
+    port: 8080
+    servlet:
+        context-path: /api/authcheckdemo
