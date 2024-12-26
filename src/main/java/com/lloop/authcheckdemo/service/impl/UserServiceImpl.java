@@ -1,9 +1,10 @@
 package com.lloop.authcheckdemo.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.lloop.authcheckdemo.common.BaseResponse;
 import com.lloop.authcheckdemo.common.ErrorCode;
+import com.lloop.authcheckdemo.constant.UserConstant;
 import com.lloop.authcheckdemo.model.domain.User;
+import com.lloop.authcheckdemo.model.dto.UserDTO;
 import com.lloop.authcheckdemo.model.request.UserLoginRequest;
 import com.lloop.authcheckdemo.model.request.UserRegisterRequest;
 import com.lloop.authcheckdemo.service.UserService;
@@ -13,7 +14,7 @@ import com.lloop.authcheckdemo.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -36,27 +37,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
-    private static final String USER_PREFIX = "user";
-
-    // TODO 用户注册
+    /**
+     * 用户注册
+     * @param account, userPassword, checkPassword
+     * @return
+     */
     @Override
-    public String userRegister(UserRegisterRequest userRegisterRequest) {
-        String account = userRegisterRequest.getAccount();
-        String userPassword = userRegisterRequest.getUserPassword();
-        String checkPassword = userRegisterRequest.getCheckPassword();
-        ThrowUtils.throwIf(StringUtils.isEmpty(account), ErrorCode.PARAMS_ERROR, "用户名不能为空");
+    public String userRegister(String account, String userPassword, String checkPassword) {
         ThrowUtils.throwIf(userMapper.selectByAccount(account) != null, ErrorCode.PARAMS_ERROR, "用户名已存在");
-
         isValidPassword(userPassword, checkPassword);
 
         User user = new User();
         user.setAccount(account);
         user.setPassword(userPassword);
         userMapper.insert(user);
-        user = userMapper.selectById(user.getId());
+        
 
-        String cookieId = redisIdWorker.nextId(USER_PREFIX);
-        stringRedisTemplate.opsForValue().set(cookieId, String.valueOf(user.getId()));
+        String cookieId = redisIdWorker.nextId(UserConstant.USER_LOGIN_PREFIX);
+        stringRedisTemplate.opsForValue().set(UserConstant.USER_LOGIN_PREFIX + cookieId, String.valueOf(user.getId()));
+        stringRedisTemplate.expire(cookieId, 30, TimeUnit.MINUTES);
+        return cookieId;
+    }
+
+    @Override
+    public String userLogin(String account, String userPassword) {
+        User user = userMapper.selectByAccount(account);
+        ThrowUtils.throwIf(ObjectUtils.isEmpty(user), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
+        ThrowUtils.throwIf(!user.getPassword().equals(userPassword), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
+
+        String cookieId = redisIdWorker.nextId(UserConstant.USER_LOGIN_PREFIX);
+        stringRedisTemplate.opsForValue().set(UserConstant.USER_LOGIN_PREFIX + cookieId, String.valueOf(user.getId()));
         stringRedisTemplate.expire(cookieId, 30, TimeUnit.MINUTES);
         return cookieId;
     }
@@ -69,21 +79,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         ThrowUtils.throwIf(!matches, ErrorCode.PARAMS_ERROR, "密码必须包含数字、大小写字母、特殊字符，长度在6-12位");
     }
 
-    @Override
-    public String userLogin(UserLoginRequest userLoginRequest) {
-        String account = userLoginRequest.getAccount();
-        String userPassword = userLoginRequest.getUserPassword();
-        ThrowUtils.throwIf(StringUtils.isEmpty(account), ErrorCode.PARAMS_ERROR, "用户名不能为空");
-        ThrowUtils.throwIf(StringUtils.isEmpty(userPassword), ErrorCode.PARAMS_ERROR, "用户密码不能为空");
-        User user = userMapper.selectByAccount(account);
-        ThrowUtils.throwIf(ObjectUtils.isEmpty(user), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
-        ThrowUtils.throwIf(!user.getPassword().equals(userPassword), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
-
-        String cookieId = redisIdWorker.nextId(USER_PREFIX);
-        stringRedisTemplate.opsForValue().set(cookieId, String.valueOf(user.getId()));
-        stringRedisTemplate.expire(cookieId, 30, TimeUnit.MINUTES);
-        return cookieId;
-    }
 }
 
 

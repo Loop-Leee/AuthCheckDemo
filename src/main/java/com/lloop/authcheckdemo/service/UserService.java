@@ -13,7 +13,7 @@ import com.lloop.authcheckdemo.model.request.UserRegisterRequest;
 */
 public interface UserService extends IService<User> {
 
-    String userRegister(UserRegisterRequest userRegisterRequest);
+    String userRegister(String account, String userPassword, String checkPassword);
 
-    String userLogin(UserLoginRequest userLoginRequest);
+    String userLogin(String account, String userPassword);
 }
