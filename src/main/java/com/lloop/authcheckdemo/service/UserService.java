@@ -1,11 +1,9 @@
 package com.lloop.authcheckdemo.service;
 
-import com.lloop.authcheckdemo.common.BaseResponse;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lloop.authcheckdemo.model.domain.User;
 import com.lloop.authcheckdemo.model.dto.UserToken;
-import com.lloop.authcheckdemo.model.request.UserLoginRequest;
-import com.lloop.authcheckdemo.model.request.UserRegisterRequest;
+import com.lloop.authcheckdemo.model.request.UserEditRequest;
 
 /**
 * @author lloop
@@ -21,4 +19,6 @@ public interface UserService extends IService<User> {
     UserToken refreshToken(String refreshToken);
 
     void logOut(String token);
+
+    void editUser(UserEditRequest userEditRequest);
 }

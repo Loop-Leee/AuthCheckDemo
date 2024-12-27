@@ -3,6 +3,7 @@ package com.lloop.authcheckdemo.controller;
 import com.lloop.authcheckdemo.common.BaseResponse;
 import com.lloop.authcheckdemo.common.ErrorCode;
 import com.lloop.authcheckdemo.model.dto.UserToken;
+import com.lloop.authcheckdemo.model.request.UserEditRequest;
 import com.lloop.authcheckdemo.model.request.UserLoginRequest;
 import com.lloop.authcheckdemo.model.request.UserRegisterRequest;
 import com.lloop.authcheckdemo.service.UserService;
@@ -30,7 +31,7 @@ public class UserController {
      * @param userRegisterRequest
      * @return
      */
-    @PostMapping("/register")
+    @PostMapping("/user/register")
     public BaseResponse<UserToken> userRegister(@RequestBody UserRegisterRequest userRegisterRequest){
         ThrowUtils.throwIf(ObjectUtils.isEmpty(userRegisterRequest), ErrorCode.PARAMS_ERROR, "请求参数为空");
         String account = userRegisterRequest.getAccount();
@@ -46,7 +47,7 @@ public class UserController {
      * @param userLoginRequest
      * @return
      */
-    @PostMapping("/login")
+    @PostMapping("/user/login")
     public BaseResponse<UserToken> userLogin(@RequestBody UserLoginRequest userLoginRequest){
         ThrowUtils.throwIf(ObjectUtils.isEmpty(userLoginRequest), ErrorCode.PARAMS_ERROR, "请求参数为空");
         String account = userLoginRequest.getAccount();
@@ -62,7 +63,7 @@ public class UserController {
      * @param refreshToken
      * @return
      */
-    @PostMapping("/refreshToken/{refreshToken}")
+    @PostMapping("/user/refreshToken/{refreshToken}")
     public BaseResponse<UserToken> refreshToken(@PathVariable("refreshToken") String refreshToken) {
         ThrowUtils.throwIf(StringUtils.isEmpty(refreshToken), ErrorCode.PARAMS_ERROR, "刷新令牌不能为空");
         return ResultUtils.success(userService.refreshToken(refreshToken));
@@ -74,10 +75,18 @@ public class UserController {
      *
      * @return
      */
-    @PostMapping("/logOut")
+    @PostMapping("/user/logOut")
     public BaseResponse<String> logOut(@RequestHeader("Authorization") String token) {
         userService.logOut(token);
         return ResultUtils.success("登出成功");
+    }
+
+
+    @PostMapping("/user/edit")
+    public BaseResponse<String> editUser(@RequestBody UserEditRequest userEditRequest) {
+        ThrowUtils.throwIf(ObjectUtils.isEmpty(userEditRequest), ErrorCode.PARAMS_ERROR, "请求参数为空");
+        userService.editUser(userEditRequest);
+        return ResultUtils.success("修改成功");
     }
 
 }

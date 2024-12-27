@@ -9,6 +9,7 @@ import com.lloop.authcheckdemo.mapper.UserMapper;
 import com.lloop.authcheckdemo.model.domain.User;
 import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.dto.UserTokenInfo;
+import com.lloop.authcheckdemo.model.request.UserEditRequest;
 import com.lloop.authcheckdemo.service.UserService;
 import com.lloop.authcheckdemo.utils.JwtUtils;
 import com.lloop.authcheckdemo.utils.ThrowUtils;
@@ -18,6 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -91,6 +96,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public void logOut(String token) {
         jwtUtils.addBlacklist(token, jwtUtils.getExpirationDate(token));
+    }
+
+    @Override
+    public void editUser(UserEditRequest userEditRequest) {
+        // 1. 校验账号是否已存在
+        User accountExisted = userMapper.selectByAccount(userEditRequest.getAccount());
+        ThrowUtils.throwIf(!ObjectUtils.isEmpty(accountExisted), ErrorCode.PARAMS_ERROR, "用户名已存在");
+        // 2. 修改用户信息
+        User user = userMapper.selectById(UserHolder.getUser().getId());
+        // 2.1 移除空属性
+        Map<String, Object> attributes = BeanUtil.beanToMap(userEditRequest, false, true);
+        attributes.entrySet().removeIf(entry -> StringUtils.isEmpty(String.valueOf(entry.getValue())));
+        // 2.2 修改用户信息
+        BeanUtil.copyProperties(attributes, user);
+        // 2.3 密码更新则重新加密
+        if(!StringUtils.isEmpty(userEditRequest.getPassword())){
+            user.setPassword(BCrypt.hashpw(userEditRequest.getPassword(), BCrypt.gensalt(8)));
+        }
+        // 3. 更新用户信息
+        userMapper.updateById(user);
+
     }
 
     private void isValidPassword(String userPassword, String checkPassword){
