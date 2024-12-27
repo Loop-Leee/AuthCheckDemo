@@ -48,7 +48,7 @@ public class JwtUtils {
      * @param refreshTokenExpireDate
      */
     public void tokenAssociation(UserToken userToken, Date refreshTokenExpireDate) {
-        Long time = (refreshTokenExpireDate.getTime() - System.currentTimeMillis()) / 1000 + 100;
+        long time = (refreshTokenExpireDate.getTime() - System.currentTimeMillis()) / 1000 + 100;
         redisUtils.set(userToken.getRefreshToken(), userToken.getAccessToken(), time);
     }
 
@@ -70,7 +70,7 @@ public class JwtUtils {
      * @param expireTime
      */
     public void addBlacklist(String token, Date expireTime) {
-        Long expireTimeLong = (expireTime.getTime() - System.currentTimeMillis()) / 1000 + 100;
+        long expireTimeLong = (expireTime.getTime() - System.currentTimeMillis()) / 1000 + 100;
         redisUtils.set(getBlacklistPrefix(token), "1", expireTimeLong);
     }
 
@@ -128,7 +128,8 @@ public class JwtUtils {
                 .setSubject(gson.toJson(userTokenInfo))
                 .setIssuedAt(nowDate)
                 .setExpiration(expireDate)
-                .signWith(SignatureAlgorithm.HS512, secret)
+                // .signWith(SignatureAlgorithm.HS512, secret)  // 暂时不用这个,不然 token 太捏麻长了
+                .signWith(SignatureAlgorithm.HS256, secret)
                 .compact();
     }
 
@@ -184,10 +185,9 @@ public class JwtUtils {
      * @param token 包含了用户身份信息的JWT字符串
      * @return
      */
-    public UserTokenInfo getUserInfoToken(String token) {
+    public UserTokenInfo getUserTokenInfo(String token) {
         String subject = getTokenClaim(token).getSubject();
-        UserTokenInfo userTokenInfo = gson.fromJson(subject, UserTokenInfo.class);
-        return userTokenInfo;
+        return gson.fromJson(subject, UserTokenInfo.class);
     }
 
     /**
@@ -197,7 +197,7 @@ public class JwtUtils {
      * @return
      */
     public String getUsername(String token) {
-        UserTokenInfo userInfoToken = getUserInfoToken(token);
+        UserTokenInfo userInfoToken = getUserTokenInfo(token);
         return userInfoToken.getUsername();
     }
 
@@ -209,7 +209,7 @@ public class JwtUtils {
      */
     public Long getUserId(String token) {
 
-        UserTokenInfo userInfoToken = getUserInfoToken(token);
+        UserTokenInfo userInfoToken = getUserTokenInfo(token);
         return userInfoToken.getId();
     }
 
