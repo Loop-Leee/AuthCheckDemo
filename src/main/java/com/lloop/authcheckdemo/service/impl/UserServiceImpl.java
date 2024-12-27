@@ -1,6 +1,7 @@
 package com.lloop.authcheckdemo.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lloop.authcheckdemo.common.ErrorCode;
 import com.lloop.authcheckdemo.common.UserHolder;
@@ -36,6 +37,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    private final static BCrypt bCrypt = new BCrypt();
+
     /**
      * 用户注册
      * @param account, userPassword, checkPassword
@@ -49,6 +52,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 1. 创建用户
         User user = new User();
         user.setAccount(account);
+        userPassword = BCrypt.hashpw(userPassword, BCrypt.gensalt(8));
         user.setPassword(userPassword);
         userMapper.insert(user);
 
@@ -61,7 +65,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 1. 校验账号和密码
         User user = userMapper.selectByAccount(account);
         ThrowUtils.throwIf(ObjectUtils.isEmpty(user), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
-        ThrowUtils.throwIf(!user.getPassword().equals(userPassword), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
+        ThrowUtils.throwIf(!BCrypt.checkpw(userPassword, user.getPassword()), ErrorCode.PARAMS_ERROR, "请输入正确的用户名和密码");
 
         // 2. 获取并返回登录凭证
         return jwtUtils.createTokens(BeanUtil.copyProperties(user, UserTokenInfo.class));
