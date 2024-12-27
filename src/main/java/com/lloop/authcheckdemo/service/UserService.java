@@ -3,6 +3,7 @@ package com.lloop.authcheckdemo.service;
 import com.lloop.authcheckdemo.common.BaseResponse;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lloop.authcheckdemo.model.domain.User;
+import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.request.UserLoginRequest;
 import com.lloop.authcheckdemo.model.request.UserRegisterRequest;
 
@@ -13,7 +14,11 @@ import com.lloop.authcheckdemo.model.request.UserRegisterRequest;
 */
 public interface UserService extends IService<User> {
 
-    String userRegister(String account, String userPassword, String checkPassword);
+    UserToken userRegister(String account, String userPassword, String checkPassword);
 
-    String userLogin(String account, String userPassword);
+    UserToken userLogin(String account, String userPassword);
+
+    UserToken refreshToken(String refreshToken);
+
+    UserToken logOut(String token);
 }

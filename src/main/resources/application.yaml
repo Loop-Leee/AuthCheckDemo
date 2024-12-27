@@ -19,3 +19,14 @@ server:
     port: 8080
     servlet:
         context-path: /api/authcheckdemo
+
+# JWT 配置
+jwt:
+    # 加密密钥
+    secret: lloop
+    # header 名称
+    header: Authorization
+    # token有效时长 S
+    expire:
+        accessToken: 3600
+        refreshToken: 7200

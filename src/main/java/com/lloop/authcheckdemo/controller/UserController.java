@@ -2,6 +2,7 @@ package com.lloop.authcheckdemo.controller;
 
 import com.lloop.authcheckdemo.common.BaseResponse;
 import com.lloop.authcheckdemo.common.ErrorCode;
+import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.request.UserLoginRequest;
 import com.lloop.authcheckdemo.model.request.UserRegisterRequest;
 import com.lloop.authcheckdemo.service.UserService;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,7 +34,7 @@ public class UserController {
      * @return
      */
     @PostMapping("/register")
-    public BaseResponse<String> userRegister(@RequestBody UserRegisterRequest userRegisterRequest){
+    public BaseResponse<UserToken> userRegister(@RequestBody UserRegisterRequest userRegisterRequest){
         ThrowUtils.throwIf(ObjectUtils.isEmpty(userRegisterRequest), ErrorCode.PARAMS_ERROR, "请求参数为空");
         String account = userRegisterRequest.getAccount();
         String userPassword = userRegisterRequest.getUserPassword();
@@ -42,14 +44,41 @@ public class UserController {
         return ResultUtils.success(userService.userRegister(account, userPassword, checkPassword));
     }
 
+    /**
+     * 用户登录
+     * @param userLoginRequest
+     * @return
+     */
     @PostMapping("/login")
-    public BaseResponse<String> userLogin(@RequestBody UserLoginRequest userLoginRequest){
+    public BaseResponse<UserToken> userLogin(@RequestBody UserLoginRequest userLoginRequest){
         ThrowUtils.throwIf(ObjectUtils.isEmpty(userLoginRequest), ErrorCode.PARAMS_ERROR, "请求参数为空");
         String account = userLoginRequest.getAccount();
-        String userPassword = userLoginRequest.getUserPassword();
+        String userPassword = userLoginRequest.getPassword();
         ThrowUtils.throwIf(StringUtils.isEmpty(account), ErrorCode.PARAMS_ERROR, "用户名不能为空");
         ThrowUtils.throwIf(StringUtils.isEmpty(userPassword), ErrorCode.PARAMS_ERROR, "用户密码不能为空");
         return ResultUtils.success(userService.userLogin(account, userPassword));
+    }
+
+    /**
+     * TODO 刷新令牌
+     *
+     * @param refreshToken
+     * @return
+     */
+    @PostMapping("/refreshToken/{refreshToken}")
+    public BaseResponse<UserToken> refreshToken(@PathVariable("refreshToken") String refreshToken) {
+        return ResultUtils.success(userService.refreshToken(refreshToken));
+    }
+
+
+    /**
+     * TODO 登出
+     *
+     * @return
+     */
+    @PostMapping("/logOut/{token}")
+    public BaseResponse<UserToken> logOut(@PathVariable("token") String token) {
+        return ResultUtils.success(userService.logOut(token));
     }
 
 }

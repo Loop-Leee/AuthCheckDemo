@@ -20,9 +20,6 @@ public class OpenAPIConfig {
                         .title("AuthCeckDemo 接口文档")
                         .description("SpringBoot3 集成 Swagger3 接口文档")
                         .version("v1"));
-//                .externalDocs(new ExternalDocumentation()
-//                        .description("项目API文档")
-//                        .url("/"));
     }
 
 }

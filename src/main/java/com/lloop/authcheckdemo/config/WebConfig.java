@@ -1,6 +1,6 @@
 package com.lloop.authcheckdemo.config;
 
-import com.lloop.authcheckdemo.interceptor.UserHolderHandler;
+import com.lloop.authcheckdemo.interceptor.UserLoginFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -14,11 +14,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
-    private UserHolderHandler userHolderHandler;
+    private UserLoginFilter userLoginFilter;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(userHolderHandler)
+        registry.addInterceptor(userLoginFilter)
                 .addPathPatterns("/**")
                 .excludePathPatterns("/login", "/register");
     }

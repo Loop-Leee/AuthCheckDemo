@@ -15,6 +15,6 @@ public class UserLoginRequest implements Serializable {
 
     private String account;
 
-    private String userPassword;
+    private String password;
 
 }
