@@ -27,6 +27,7 @@ public class UserLoginFilter implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        log.info("Intercepting request to path: {}", request.getRequestURI());
         // 1. 获取token
         String token = request.getHeader(jwtUtils.header);
 
@@ -36,7 +37,7 @@ public class UserLoginFilter implements HandlerInterceptor {
         ThrowUtils.throwIf(jwtUtils.checkBlacklist(token), ErrorCode.PARAMS_ERROR, "用户已被禁止登录!");
 
         // 3. token有效 => 记录登录用户信息
-        UserTokenInfo userTokenInfo = jwtUtils.getUserInfoToken(token);
+        UserTokenInfo userTokenInfo = jwtUtils.getUserTokenInfo(token);
         ThrowUtils.throwIf(ObjectUtils.isEmpty(userTokenInfo), ErrorCode.NULL_ERROR, "对不起,身份认证出现错误,请重新登录...");
         UserHolder.saveUser(userTokenInfo);
 

@@ -1,29 +1,23 @@
 package com.lloop.authcheckdemo.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.jwt.JWTUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lloop.authcheckdemo.common.ErrorCode;
-import com.lloop.authcheckdemo.constant.UserConstant;
+import com.lloop.authcheckdemo.common.UserHolder;
+import com.lloop.authcheckdemo.mapper.UserMapper;
 import com.lloop.authcheckdemo.model.domain.User;
-import com.lloop.authcheckdemo.model.dto.UserDTO;
 import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.dto.UserTokenInfo;
-import com.lloop.authcheckdemo.model.request.UserLoginRequest;
-import com.lloop.authcheckdemo.model.request.UserRegisterRequest;
 import com.lloop.authcheckdemo.service.UserService;
-import com.lloop.authcheckdemo.mapper.UserMapper;
 import com.lloop.authcheckdemo.utils.JwtUtils;
-import com.lloop.authcheckdemo.utils.RedisIdWorker;
 import com.lloop.authcheckdemo.utils.ThrowUtils;
 import jakarta.annotation.Resource;
-import org.apache.commons.lang3.ObjectUtils;
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
-import java.util.concurrent.TimeUnit;
 
 /**
 * @author lloop
@@ -75,12 +69,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public UserToken refreshToken(String refreshToken) {
-        return null;
+        // 1. 检查refreshToken是否也已过期
+        ThrowUtils.throwIf(jwtUtils.isTokenExpired(refreshToken), ErrorCode.NOT_LOGIN, "登录已过期!");
+
+        // 2. 刷新前先将旧的refreshToken和accessToken加入黑名单
+        jwtUtils.addBlacklist(refreshToken, jwtUtils.getExpirationDate(refreshToken));
+        String accessToken = jwtUtils.getAccessTokenByRefresh(refreshToken);
+        if(StringUtils.isEmpty(accessToken)) {
+            jwtUtils.addBlacklist(accessToken, jwtUtils.getExpirationDate(accessToken));
+        }
+
+        // 3. 为当前用户刷新token
+        return jwtUtils.createTokens(UserHolder.getUser());
+
     }
 
     @Override
-    public UserToken logOut(String token) {
-        return null;
+    public void logOut(String token) {
+        jwtUtils.addBlacklist(token, jwtUtils.getExpirationDate(token));
     }
 
     private void isValidPassword(String userPassword, String checkPassword){

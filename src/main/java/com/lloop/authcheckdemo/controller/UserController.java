@@ -12,10 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @Author lloop
@@ -60,25 +57,27 @@ public class UserController {
     }
 
     /**
-     * TODO 刷新令牌
+     * 刷新令牌
      *
      * @param refreshToken
      * @return
      */
     @PostMapping("/refreshToken/{refreshToken}")
     public BaseResponse<UserToken> refreshToken(@PathVariable("refreshToken") String refreshToken) {
+        ThrowUtils.throwIf(StringUtils.isEmpty(refreshToken), ErrorCode.PARAMS_ERROR, "刷新令牌不能为空");
         return ResultUtils.success(userService.refreshToken(refreshToken));
     }
 
 
     /**
-     * TODO 登出
+     * 主动登出
      *
      * @return
      */
-    @PostMapping("/logOut/{token}")
-    public BaseResponse<UserToken> logOut(@PathVariable("token") String token) {
-        return ResultUtils.success(userService.logOut(token));
+    @PostMapping("/logOut")
+    public BaseResponse<String> logOut(@RequestHeader("Authorization") String token) {
+        userService.logOut(token);
+        return ResultUtils.success("登出成功");
     }
 
 }

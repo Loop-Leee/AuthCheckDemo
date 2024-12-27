@@ -20,5 +20,5 @@ public interface UserService extends IService<User> {
 
     UserToken refreshToken(String refreshToken);
 
-    UserToken logOut(String token);
+    void logOut(String token);
 }
