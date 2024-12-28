@@ -49,7 +49,7 @@ public class JwtUtils {
      */
     public void tokenAssociation(UserToken userToken, Date refreshTokenExpireDate) {
         long time = (refreshTokenExpireDate.getTime() - System.currentTimeMillis()) / 1000 + 100;
-        redisUtils.set(userToken.getRefreshToken(), userToken.getAccessToken(), time);
+        redisUtils.set(getRefreshTokenPrefix(userToken.getRefreshToken()), userToken.getAccessToken(), time);
     }
 
     /**
@@ -58,10 +58,18 @@ public class JwtUtils {
      * @param refreshToken
      */
     public String getAccessTokenByRefresh(String refreshToken) {
-        Object value = redisUtils.get(refreshToken);
+        Object value = redisUtils.get(getRefreshTokenPrefix(refreshToken));
         return value == null ? null : String.valueOf(value);
     }
 
+    /**
+     * 获取 刷新令牌前缀
+     * @param refreshToken
+     * @return
+     */
+    private String getRefreshTokenPrefix(String refreshToken) {
+        return UserConstant.USER_REFRESH_TOKEN_PREFIX + refreshToken;
+    }
 
     /**
      * 添加至黑名单
@@ -85,7 +93,7 @@ public class JwtUtils {
     }
 
     /**
-     * 获取黑名单前缀
+     * 获取 黑名单前缀
      *
      * @param token
      * @return

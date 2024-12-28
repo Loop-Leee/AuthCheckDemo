@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -33,12 +32,11 @@ public class UserLoginFilter implements HandlerInterceptor {
 
         // 2. 判断token是否有效
         ThrowUtils.throwIf(StringUtils.isEmpty(token), ErrorCode.NULL_ERROR, "请登录后操作!");
-        ThrowUtils.throwIf(jwtUtils.isTokenExpired(token), ErrorCode.PARAMS_ERROR, "登录已过期!");
+        ThrowUtils.throwIf(jwtUtils.isTokenExpired(token), ErrorCode.LOGIN_EXPIRED, "登录已过期!");
         ThrowUtils.throwIf(jwtUtils.checkBlacklist(token), ErrorCode.PARAMS_ERROR, "用户已被禁止登录!");
 
         // 3. token有效 => 记录登录用户信息
         UserTokenInfo userTokenInfo = jwtUtils.getUserTokenInfo(token);
-        ThrowUtils.throwIf(ObjectUtils.isEmpty(userTokenInfo), ErrorCode.NULL_ERROR, "对不起,身份认证出现错误,请重新登录...");
         UserHolder.saveUser(userTokenInfo);
 
         return true;

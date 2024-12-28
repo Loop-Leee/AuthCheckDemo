@@ -78,8 +78,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public UserToken refreshToken(String refreshToken) {
-        // 1. 检查refreshToken是否也已过期
-        ThrowUtils.throwIf(jwtUtils.isTokenExpired(refreshToken), ErrorCode.NOT_LOGIN, "登录已过期!");
+        // 1. 检查refreshToken是否已过期
+        ThrowUtils.throwIf(jwtUtils.isTokenExpired(refreshToken), ErrorCode.NOT_LOGIN, "登录已过期,请重新登录!");
 
         // 2. 刷新前先将旧的refreshToken和accessToken加入黑名单
         jwtUtils.addBlacklist(refreshToken, jwtUtils.getExpirationDate(refreshToken));
@@ -89,7 +89,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         // 3. 为当前用户刷新token
-        return jwtUtils.createTokens(UserHolder.getUser());
+        return jwtUtils.createTokens(jwtUtils.getUserTokenInfo(refreshToken));
 
     }
 

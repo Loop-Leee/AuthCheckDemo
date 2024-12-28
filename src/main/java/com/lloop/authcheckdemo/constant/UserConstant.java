@@ -6,7 +6,7 @@ package com.lloop.authcheckdemo.constant;
  */
 public class UserConstant {
 
-    public static final String USER_LOGIN_PREFIX = "user:login:";
+    public static final String USER_REFRESH_TOKEN_PREFIX = "user:login:refresh:";
 
     public static final String TOKEN_BLACKLIST_PREFIX = "user:blacklist:";
 
