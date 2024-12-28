@@ -5,6 +5,7 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lloop.authcheckdemo.common.ErrorCode;
 import com.lloop.authcheckdemo.common.UserHolder;
+import com.lloop.authcheckdemo.constant.UserConstant;
 import com.lloop.authcheckdemo.mapper.UserMapper;
 import com.lloop.authcheckdemo.model.domain.User;
 import com.lloop.authcheckdemo.model.dto.UserToken;
@@ -14,14 +15,11 @@ import com.lloop.authcheckdemo.service.UserService;
 import com.lloop.authcheckdemo.utils.JwtUtils;
 import com.lloop.authcheckdemo.utils.ThrowUtils;
 import jakarta.annotation.Resource;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -102,9 +100,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public void editUser(UserEditRequest userEditRequest) {
         // 1. 校验账号是否已存在
         User accountExisted = userMapper.selectByAccount(userEditRequest.getAccount());
-        ThrowUtils.throwIf(!ObjectUtils.isEmpty(accountExisted), ErrorCode.PARAMS_ERROR, "用户名已存在");
-        // 2. 修改用户信息
+        ThrowUtils.throwIf(!ObjectUtils.isEmpty(accountExisted), ErrorCode.PARAMS_ERROR, "用户名已存在!");
+        // 2. 获取用户信息并鉴权
         User user = userMapper.selectById(UserHolder.getUser().getId());
+        ThrowUtils.throwIf(
+                !user.getId().equals(UserHolder.getUser().getId()) && !user.getRole().equals(UserConstant.ROLE_ADMIN),
+                ErrorCode.PARAMS_ERROR, "非管理员不能修改他人的信息!");
         // 2.1 移除空属性
         Map<String, Object> attributes = BeanUtil.beanToMap(userEditRequest, false, true);
         attributes.entrySet().removeIf(entry -> StringUtils.isEmpty(String.valueOf(entry.getValue())));
