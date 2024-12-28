@@ -1,7 +1,6 @@
 package com.lloop.authcheckdemo.utils;
 
 import com.google.gson.Gson;
-import com.lloop.authcheckdemo.constant.RedisPrefix;
 import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.dto.UserTokenInfo;
 import io.jsonwebtoken.Claims;
@@ -68,7 +67,7 @@ public class JwtUtils {
      * @return
      */
     private String getRefreshTokenPrefix(String refreshToken) {
-        return RedisPrefix.USER_REFRESH_TOKEN + refreshToken;
+        return RedisUtils.USER_REFRESH_TOKEN + refreshToken;
     }
 
     /**
@@ -99,7 +98,7 @@ public class JwtUtils {
      * @return
      */
     public String getBlacklistPrefix(String token) {
-        return RedisPrefix.TOKEN_BLACKLIST + token;
+        return RedisUtils.TOKEN_BLACKLIST + token;
     }
 
 

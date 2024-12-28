@@ -20,6 +20,21 @@ public class RedisUtils {
     @Resource
     private RedisTemplate redisTemplate;
 
+    // Redis prefix
+    public static final String USER_REFRESH_TOKEN = "user:login:refresh:";
+    public static final String TOKEN_BLACKLIST = "user:blacklist:";
+
+
+    /**
+     * 移除Redis前缀
+     * @param key
+     * @param prefix
+     * @return
+     */
+    public String removePrefix(String key, String prefix){
+        return key.substring(prefix.length());
+    }
+
     /**
      * 指定缓存失效时间
      *
