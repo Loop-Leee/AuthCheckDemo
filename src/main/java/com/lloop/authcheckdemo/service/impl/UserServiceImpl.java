@@ -5,11 +5,11 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lloop.authcheckdemo.common.ErrorCode;
 import com.lloop.authcheckdemo.common.UserHolder;
-import com.lloop.authcheckdemo.constant.UserConstant;
 import com.lloop.authcheckdemo.mapper.UserMapper;
 import com.lloop.authcheckdemo.model.domain.User;
 import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.dto.UserTokenInfo;
+import com.lloop.authcheckdemo.model.enums.UserRoleEnum;
 import com.lloop.authcheckdemo.model.request.UserEditRequest;
 import com.lloop.authcheckdemo.service.UserService;
 import com.lloop.authcheckdemo.utils.JwtUtils;
@@ -104,7 +104,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 2. 获取用户信息并鉴权
         User user = userMapper.selectById(UserHolder.getUser().getId());
         ThrowUtils.throwIf(
-                !user.getId().equals(UserHolder.getUser().getId()) && !user.getRole().equals(UserConstant.ROLE_ADMIN),
+                !user.getId().equals(UserHolder.getUser().getId()) && !user.getRole().equals(UserRoleEnum.ADMIN),
                 ErrorCode.PARAMS_ERROR, "非管理员不能修改他人的信息!");
         // 2.1 移除空属性
         Map<String, Object> attributes = BeanUtil.beanToMap(userEditRequest, false, true);

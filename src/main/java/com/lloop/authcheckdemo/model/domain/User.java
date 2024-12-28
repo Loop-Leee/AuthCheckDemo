@@ -1,11 +1,11 @@
 package com.lloop.authcheckdemo.model.domain;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.io.Serializable;
 import java.util.Date;
+
+import com.lloop.authcheckdemo.model.enums.UserRoleEnum;
 import lombok.Data;
 
 /**
@@ -77,9 +77,10 @@ public class User implements Serializable {
     private Integer isDelete;
 
     /**
-     * 用户角色 0 - 普通用户 1 - 管理员
+     * 用户角色
      */
-    private Integer role;
+    @EnumValue
+    private UserRoleEnum role;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
