@@ -1,12 +1,21 @@
 package com.lloop.authcheckdemo.utils;
 
+import cn.hutool.core.lang.Dict;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.lloop.authcheckdemo.model.domain.User;
+import com.lloop.authcheckdemo.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.*;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -924,5 +933,24 @@ public class RedisUtils {
             extracted();
         }
     }
+
+    /**
+     * 缓存预热
+     */
+//    @Scheduled(cron = "0 3 0 * * *")
+//    public void cacheRecommendForUsers(Map<String, Object> map) {
+//        for (Map.Entry<String, Object> entry : map.entrySet()) {
+//            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+//            Page<User> userPage = userService.page(new Page<>(1, 20), queryWrapper);
+//            String redisKey = UserService.CACHE_RECOMMEND_PREFIX + user.getId();
+//            try {
+//                redisTemplate.opsForValue().set(redisKey, userPage, 60 * 60 * 24, TimeUnit.SECONDS);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//
+//            String s = "abc";
+//            int length = s.length();
+//        }
 }
 

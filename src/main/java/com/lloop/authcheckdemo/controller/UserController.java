@@ -95,4 +95,16 @@ public class UserController {
         return ResultUtils.success("修改成功");
     }
 
+
+    /**
+     * 获取用户信息
+     *
+     * @return
+     */
+//    @GetMapping("/user/getUserInfo")
+//    public BaseResponse<UserToken> getUserInfo(@RequestHeader("Authorization") String token) {
+//        return ResultUtils.success(userService.getUserInfo(token));
+//    }
+
+
 }
