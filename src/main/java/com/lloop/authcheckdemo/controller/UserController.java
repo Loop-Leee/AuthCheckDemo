@@ -1,5 +1,6 @@
 package com.lloop.authcheckdemo.controller;
 
+import com.lloop.authcheckdemo.annotation.IsAdmin;
 import com.lloop.authcheckdemo.common.BaseResponse;
 import com.lloop.authcheckdemo.common.ErrorCode;
 import com.lloop.authcheckdemo.model.dto.UserToken;
@@ -105,6 +106,18 @@ public class UserController {
 //    public BaseResponse<UserToken> getUserInfo(@RequestHeader("Authorization") String token) {
 //        return ResultUtils.success(userService.getUserInfo(token));
 //    }
+
+    /**
+     * 测试管理员注解
+     *
+     * @return
+     */
+    @IsAdmin
+    @GetMapping("/user/testAdmin")
+    public BaseResponse<String> testAdmin() {
+        return ResultUtils.success("管理员, 您好!");
+    }
+
 
 
 }
