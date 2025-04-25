@@ -15,10 +15,19 @@ spring:
     mvc:
         pathmatch:
             matching-strategy: ant_path_matcher
+    thymeleaf:
+        enabled: true
+        cache: false
+        prefix: classpath:/templates/
+        suffix: .html
 server:
     port: 8080
     servlet:
         context-path: /authcheckdemo/api
+    error:
+        whitelabel:
+            enabled: false    # 关闭默认 white label 页面
+            path: /error      # 自定义错误页面路径
 
 # JWT 配置
 jwt:

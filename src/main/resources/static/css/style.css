@@ -1,0 +1,64 @@
+/* 全局样式 */
+html, body {
+    height: 100%; /* 确保html和body高度占满整个视口 */
+    margin: 0; /* 移除默认的外边距 */
+}
+
+body {
+    display: flex; /* 使用flex布局 */
+    flex-direction: column; /* 垂直排列内容 */
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 主内容区域样式 */
+.content {
+    flex: 1; /* 让主内容区域占据剩余空间，从而将footer推到页面底部 */
+}
+
+
+/* 卡片样式 */
+.card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 按钮样式 */
+.btn {
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+}
+
+/* 表单样式 */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 导航栏样式 */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 页脚样式 */
+footer {
+    margin-top: auto; /* 自动填充剩余空间，确保footer始终在底部 */
+    background-color: #343a40; /* 设置背景色为深色 */
+    color: #fff; /* 设置文字颜色为白色 */
+    padding: 1rem 0; /* 增加上下内边距 */
+    text-align: center; /* 文本居中对齐 */
+}
+
+/* 导航栏左边字体样式 */
+.navbar-brand {
+    font-family: 'Arial', sans-serif; /* 更改字体 */
+    font-weight: bold; /* 加粗字体 */
+}

@@ -2,6 +2,7 @@ package com.lloop.authcheckdemo.interceptor;
 
 import com.lloop.authcheckdemo.common.ErrorCode;
 import com.lloop.authcheckdemo.common.UserHolder;
+import com.lloop.authcheckdemo.model.dto.UserTokenInfo;
 import com.lloop.authcheckdemo.utils.ThrowUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.annotation.Aspect;
@@ -25,7 +26,9 @@ public class IsAdminAspect {
 
     @Before("@annotation(com.lloop.authcheckdemo.annotation.IsAdmin)")
     public void checkAdmin() throws IllegalAccessException {
-        Integer role = UserHolder.getUser().getRole();
+        UserTokenInfo user = UserHolder.getUser();
+        ThrowUtils.throwIf(user == null, ErrorCode.PARAMS_ERROR, "请先登录!");
+        Integer role = user.getRole();
         ThrowUtils.throwIf(role == null || role != 1, ErrorCode.PARAMS_ERROR, "非管理员不得进行此类操作!");
     }
 
