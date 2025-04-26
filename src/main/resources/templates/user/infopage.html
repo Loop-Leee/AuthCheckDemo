@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>用户信息</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- 引入公共工具 -->
+    <script th:src="@{/js/common/utils.js}"></script>
+</head>
+<body>
+<div th:replace="fragments/header :: header"></div>
+
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">个人信息</h4>
+        </div>
+        <div class="card-body">
+            <form id="userInfoForm" th:object="${userEditRequest}">
+                <div class="mb-3">
+                    <label for="username" class="form-label">用户名</label>
+                    <input type="text" class="form-control" id="username" name="username" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">邮箱</label>
+                    <input type="email" class="form-control" id="email" name="email">
+                    <div class="text-danger" th:if="${#fields.hasErrors('email')}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label">电话</label>
+                    <input type="text" class="form-control" id="phone" name="phone">
+                    <div class="text-danger" th:if="${#fields.hasErrors('phone')}"></div>
+                </div>
+                <button type="submit" class="btn btn-dark">保存修改</button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        fetchWithToken('/user/info')
+            .then(res => {
+                if (res.code === 0 && res.data) {
+                    const data = res.data;
+                    // 遍历 data 中的每一个字段
+                    for (const key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            const input = document.getElementById(key);
+                            if (input) {
+                                // 如果页面上有对应 id 的 input，给它赋值
+                                input.value = data[key] ?? '';
+                            }
+                        }
+                    }
+
+                } else {
+                    console.error('数据获取失败：', res.message);
+                }
+            })
+            .catch(err => {
+                console.error('请求错误：', err);
+            });
+
+
+        // 监听表单提交，改成用 fetchWithToken 发送
+        const form = document.getElementById('userInfoForm');
+        form.addEventListener('submit', function (event) {
+            event.preventDefault(); // 阻止原本的表单提交行为
+            // 把表单数据组装成 JSON
+            const formData = new FormData(form);
+            const formObject = {};
+            formData.forEach((value, key) => {
+                formObject[key] = value;
+            });
+
+            // 发起带 Token 的 POST 请求
+            fetchWithToken('/user/edit', {
+                method: 'POST',
+                body: JSON.stringify(formObject)
+            })
+            .then(res => {
+                if (res.code === 0) {
+                    alert('保存成功！'); // 成功提示
+                    // location.reload(); // 如果想刷新页面可以打开这一行
+                } else {
+                    alert('保存失败：' + res.message); // 失败提示
+                }
+            })
+            .catch(err => {
+                console.error('提交异常：', err);
+                alert('提交出错，请稍后再试。');
+            });
+        });
+    });
+
+</script>
+
+</body>
+</html>

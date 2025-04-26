@@ -23,5 +23,5 @@ public interface UserService extends IService<User> {
 
     void editUser(UserEditRequest userEditRequest);
 
-    UserDTO getUserInfo();
+    UserEditRequest getUserInfo();
 }

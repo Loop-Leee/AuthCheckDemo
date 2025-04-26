@@ -118,10 +118,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public UserDTO getUserInfo() {
+    public UserEditRequest getUserInfo() {
         Long id = UserHolder.getUser().getId();
         User user = userMapper.selectById(id);
-        return BeanUtil.copyProperties(user, UserDTO.class);
+        UserEditRequest userEditRequest = BeanUtil.copyProperties(user, UserEditRequest.class);
+        userEditRequest.setPassword("");
+        return userEditRequest;
     }
 
     private void isValidPassword(String userPassword, String checkPassword){

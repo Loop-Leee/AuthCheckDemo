@@ -31,6 +31,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/auth/login",       // 允许登录页面
                         "/auth/register",    // 允许注册页面
                         "/user/homepage",     // 新增：放行主页路径
+                        "/user/infopage",     // 新增: 放行个人信息页面
                         // 放行静态资源（CSS/JS/图片等）
                         "/static/**",
                         "/css/**",

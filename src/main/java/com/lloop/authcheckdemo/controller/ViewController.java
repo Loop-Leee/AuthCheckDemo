@@ -9,11 +9,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class ViewController {
 
+    /**
+     * 首页
+     * @return
+     */
     @GetMapping("/index")
     public String indexPage() {
         return "index";
     }
 
+    /**
+     * 首页
+     * @return
+     */
     @GetMapping("/")
     public String indexPage2() {
         return "index";
@@ -24,11 +32,20 @@ public class ViewController {
         return "auth/login"; // 返回模板路径（不带 .html）
     }
 
+    /**
+     * 用户主页
+     * @return
+     */
     @GetMapping("/user/homepage")
     public String homepage() {
         return "user/homepage"; // 返回模板路径（不带 .html）
     }
 
+    /**
+     * 注册页面
+     * @param model
+     * @return
+     */
     @GetMapping("/auth/register")
     public String showRegisterForm(Model model) {
         model.addAttribute("userRegisterRequest", new UserRegisterRequest());
@@ -38,7 +55,13 @@ public class ViewController {
     @GetMapping("/auth/info")
     public String showInfoPage(Model model) {
         model.addAttribute("userEditRequest", new UserEditRequest());
-        return "user/info";
+        return "infopage";
+    }
+
+    @GetMapping("user/infopage")
+    public String showInfoPage2(Model model) {
+        model.addAttribute("userEditRequest", new UserEditRequest());
+        return "user/infopage";
     }
 
 }
