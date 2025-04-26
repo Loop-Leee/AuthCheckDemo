@@ -26,7 +26,7 @@ class UserControllerTest {
         // UserToken refreshed = userService.refreshToken(userToken.getRefreshToken());
         // Assertions.assertNotEquals(userToken.getAccessToken(), refreshed.getAccessToken(), "accessToken 刷新失败");
 
-        userService.logOut(userToken.getAccessToken());
+        userService.logout(userToken.getAccessToken());
     }
 
 }

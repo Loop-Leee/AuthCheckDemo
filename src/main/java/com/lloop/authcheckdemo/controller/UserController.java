@@ -3,6 +3,7 @@ package com.lloop.authcheckdemo.controller;
 import com.lloop.authcheckdemo.annotation.IsAdmin;
 import com.lloop.authcheckdemo.common.BaseResponse;
 import com.lloop.authcheckdemo.common.ErrorCode;
+import com.lloop.authcheckdemo.model.dto.UserDTO;
 import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.request.UserEditRequest;
 import com.lloop.authcheckdemo.model.request.UserLoginRequest;
@@ -76,9 +77,9 @@ public class UserController {
      *
      * @return
      */
-    @PostMapping("/user/logOut")
-    public BaseResponse<String> logOut(@RequestHeader("Authorization") String token) {
-        userService.logOut(token);
+    @PostMapping("/user/logout")
+    public BaseResponse<String> logout(@RequestHeader("Authorization") String token) {
+        userService.logout(token.substring(7));
         return ResultUtils.success("登出成功");
     }
 
@@ -102,10 +103,10 @@ public class UserController {
      *
      * @return
      */
-//    @GetMapping("/user/getUserInfo")
-//    public BaseResponse<UserToken> getUserInfo(@RequestHeader("Authorization") String token) {
-//        return ResultUtils.success(userService.getUserInfo(token));
-//    }
+    @GetMapping("/user/info")
+    public BaseResponse<UserDTO> getUserInfo(@RequestHeader("Authorization") String token) {
+        return ResultUtils.success(userService.getUserInfo());
+    }
 
     /**
      * 测试管理员注解
@@ -118,6 +119,9 @@ public class UserController {
         return ResultUtils.success("管理员, 您好!");
     }
 
-
+    @GetMapping("/user/homepage/info")
+    public BaseResponse<UserDTO> homepage(@RequestHeader("Authorization") String token) {
+        return ResultUtils.success(userService.getUserInfo());
+    }
 
 }

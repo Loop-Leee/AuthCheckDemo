@@ -7,6 +7,7 @@ import com.lloop.authcheckdemo.common.ErrorCode;
 import com.lloop.authcheckdemo.common.UserHolder;
 import com.lloop.authcheckdemo.mapper.UserMapper;
 import com.lloop.authcheckdemo.model.domain.User;
+import com.lloop.authcheckdemo.model.dto.UserDTO;
 import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.dto.UserTokenInfo;
 import com.lloop.authcheckdemo.model.request.UserEditRequest;
@@ -88,7 +89,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public void logOut(String token) {
+    public void logout(String token) {
         jwtUtils.addBlacklist(token, jwtUtils.getExpirationDate(token));
     }
 
@@ -114,6 +115,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 3. 更新用户信息
         userMapper.updateById(user);
 
+    }
+
+    @Override
+    public UserDTO getUserInfo() {
+        Long id = UserHolder.getUser().getId();
+        User user = userMapper.selectById(id);
+        return BeanUtil.copyProperties(user, UserDTO.class);
     }
 
     private void isValidPassword(String userPassword, String checkPassword){

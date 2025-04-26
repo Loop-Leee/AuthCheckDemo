@@ -7,16 +7,26 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
-public class LoginController {
+public class ViewController {
 
     @GetMapping("/index")
     public String indexPage() {
         return "index";
     }
 
+    @GetMapping("/")
+    public String indexPage2() {
+        return "index";
+    }
+
     @GetMapping("/auth/login")
     public String loginPage() {
         return "auth/login"; // 返回模板路径（不带 .html）
+    }
+
+    @GetMapping("/user/homepage")
+    public String homepage() {
+        return "user/homepage"; // 返回模板路径（不带 .html）
     }
 
     @GetMapping("/auth/register")

@@ -21,7 +21,22 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(userLoginFilter)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/user/login", "/user/register", "/user/refreshToken/**", "/v3/api-docs");
+                .excludePathPatterns(
+                        "/index",
+                        "/",
+                        "/user/login",
+                        "/user/register",
+                        "/user/refreshToken/**",
+                        "/v3/api-docs",
+                        "/auth/login",       // 允许登录页面
+                        "/auth/register",    // 允许注册页面
+                        "/user/homepage",     // 新增：放行主页路径
+                        // 放行静态资源（CSS/JS/图片等）
+                        "/static/**",
+                        "/css/**",
+                        "/js/**",
+                        "/images/**"
+                );
     }
 
 }

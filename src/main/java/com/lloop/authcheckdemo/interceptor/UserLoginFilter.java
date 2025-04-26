@@ -26,9 +26,16 @@ public class UserLoginFilter implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        log.info("Intercepting request to path: {}", request.getRequestURI());
+        log.info("拦截请求路径: {}", request.getRequestURI());
         // 1. 获取token
         String token = request.getHeader(jwtUtils.header);
+        if (StringUtils.isEmpty(token)) {
+            log.warn("请求头中缺少 token 信息");
+            return false;
+        }
+
+        // 去掉 Bearer 前缀
+        token = token.substring(7);
 
         // 2. 判断token是否有效
         ThrowUtils.throwIf(StringUtils.isEmpty(token), ErrorCode.NULL_ERROR, "请登录后操作!");
@@ -52,6 +59,7 @@ public class UserLoginFilter implements HandlerInterceptor {
      */
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        log.info("请求路径: {}, 状态: {}" , request.getRequestURI() , response.getStatus());
         UserHolder.removeUser();
     }
 

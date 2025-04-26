@@ -28,7 +28,7 @@ public class UserDTO {
         /**
          * 账号
          */
-        private String Account;
+        private String account;
 
         /**
          * 用户头像

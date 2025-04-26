@@ -2,6 +2,7 @@ package com.lloop.authcheckdemo.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lloop.authcheckdemo.model.domain.User;
+import com.lloop.authcheckdemo.model.dto.UserDTO;
 import com.lloop.authcheckdemo.model.dto.UserToken;
 import com.lloop.authcheckdemo.model.request.UserEditRequest;
 
@@ -18,7 +19,9 @@ public interface UserService extends IService<User> {
 
     UserToken refreshToken(String refreshToken);
 
-    void logOut(String token);
+    void logout(String token);
 
     void editUser(UserEditRequest userEditRequest);
+
+    UserDTO getUserInfo();
 }
