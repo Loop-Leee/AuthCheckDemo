@@ -26,11 +26,10 @@ public class UserLoginFilter implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        log.info("拦截请求路径: {}", request.getRequestURI());
         // 1. 获取token
         String token = request.getHeader(jwtUtils.header);
         if (StringUtils.isEmpty(token)) {
-            log.warn("请求头中缺少 token 信息");
+            log.warn("请求头中缺少 token 信息: {}", request.getRequestURI());
             return false;
         }
 

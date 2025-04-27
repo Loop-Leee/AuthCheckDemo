@@ -23,7 +23,7 @@ spring:
 server:
     port: 8080
     servlet:
-        context-path: /authcheckdemo/api
+        context-path: /authcheckdemo
     error:
         whitelabel:
             enabled: false    # 关闭默认 white label 页面

@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" th:href="@{/css/user/homepage.css}"> <!-- 引入个人主页样式 -->
     <link rel="stylesheet" th:href="@{/css/style.css}"> <!-- 引入公共样式 -->
+    <script th:src="@{/js/common/utils.js}"></script> <!-- 引入公共工具 -->
 </head>
 <body>
 <div th:replace="fragments/header :: header"></div>
@@ -27,12 +28,10 @@
 <div th:replace="fragments/footer :: footer"></div>
 
 <script th:inline="javascript">
-    const contextPath = /*[[@{/}]]*/ ""; // 使用Thymeleaf动态生成主页的URL
 
     // 退出登录按钮点击事件
     function logout() {
-        const logoutPath = contextPath + "user/logout";
-        fetchWithToken(logoutPath, {
+        fetchWithToken("user/logout", {
             method: "POST",
         })
         .then(response => {
@@ -43,7 +42,7 @@
             console.log("登出响应：", code);
             if (code === 0) {
                 localStorage.removeItem("accessToken"); // 登出成功后移除 accessToken
-                window.location.href = contextPath + "index"; // 跳转到登录页面
+                window.location.href = contextStatic + "index"; // 跳转到登录页面
             } else {
                 throw new Error("登出请求状态异常");
             }
@@ -55,8 +54,7 @@
 
     // 加载用户信息
     window.onload = function () {
-        const userInfoUrl = /*[[@{/user/info}]]*/ "";
-        fetchWithToken(userInfoUrl)
+        fetchWithToken("user/info")
             .then(response => {
                 return response.data;
             })
@@ -73,7 +71,7 @@
             }).catch(error => {
             alert("获取用户信息失败：" + error.message);
             console.error('获取用户信息失败：', error.message);
-            window.location.href = contextPath + "/auth/login";
+            window.location.href = contextStatic + "auth/login";
         });
     };
 
@@ -83,39 +81,6 @@
         if (hour >= 5 && hour < 12) return "上午";
         if (hour >= 12 && hour < 18) return "下午";
         return "晚上";
-    }
-
-    // 使用 fetchWithToken 封装的 fetch 方法
-    function fetchWithToken(url, options = {}) {
-        console.log("fetchWithToken called with URL:", url); // ✅ 确认函数被调用
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-            alert("未登录或 Token 失效，请重新登录！");
-            window.location.href = "/index.html";
-            return Promise.reject("Token missing");
-        }
-
-        return fetch(url, {
-            ...options,
-            headers: {
-                ...options.headers,
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error(`请求失败: ${response.status}`);
-            }
-        })
-        .catch(error => {
-            alert("获取用户信息失败：" + error.message);
-            console.error('获取用户信息请求失败：', error.message);
-            window.location.href = contextPath + "/auth/login";
-            return Promise.reject(error);
-        })
     }
 
 </script>

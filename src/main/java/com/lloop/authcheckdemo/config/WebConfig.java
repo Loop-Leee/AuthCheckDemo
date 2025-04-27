@@ -20,23 +20,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(userLoginFilter)
-                .addPathPatterns("/**")
+                // 只拦截后端API接口，避免拦静态资源
+                .addPathPatterns("/api/**")
                 .excludePathPatterns(
-                        "/index",
-                        "/",
-                        "/user/login",
-                        "/user/register",
-                        "/user/refreshToken/**",
-                        "/v3/api-docs",
-                        "/auth/login",       // 允许登录页面
-                        "/auth/register",    // 允许注册页面
-                        "/user/homepage",     // 新增：放行主页路径
-                        "/user/infopage",     // 新增: 放行个人信息页面
-                        // 放行静态资源（CSS/JS/图片等）
-                        "/static/**",
-                        "/css/**",
-                        "/js/**",
-                        "/images/**"
+                        "/api/user/login",       // 登录接口
+                        "/api/user/register",    // 注册接口
+                        "/api/user/refreshToken/**" // 刷新Token接口
                 );
     }
 

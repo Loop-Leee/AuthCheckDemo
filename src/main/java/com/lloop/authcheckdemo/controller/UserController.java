@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Slf4j
 @RestController
+@RequestMapping("/api/user")
 public class UserController {
 
     @Autowired
@@ -32,7 +33,7 @@ public class UserController {
      * @param userRegisterRequest
      * @return
      */
-    @PostMapping("/user/register")
+    @PostMapping("/register")
     public BaseResponse<UserToken> userRegister(@RequestBody UserRegisterRequest userRegisterRequest){
         ThrowUtils.throwIf(ObjectUtils.isEmpty(userRegisterRequest), ErrorCode.PARAMS_ERROR, "请求参数为空");
         String account = userRegisterRequest.getAccount();
@@ -48,7 +49,7 @@ public class UserController {
      * @param userLoginRequest
      * @return
      */
-    @PostMapping("/user/login")
+    @PostMapping("/login")
     public BaseResponse<UserToken> userLogin(@RequestBody UserLoginRequest userLoginRequest){
         ThrowUtils.throwIf(ObjectUtils.isEmpty(userLoginRequest), ErrorCode.PARAMS_ERROR, "请求参数为空");
         String account = userLoginRequest.getAccount();
@@ -64,7 +65,7 @@ public class UserController {
      * @param refreshToken
      * @return
      */
-    @PostMapping("/user/refreshToken/{refreshToken}")
+    @PostMapping("/refreshToken/{refreshToken}")
     public BaseResponse<UserToken> refreshToken(@PathVariable("refreshToken") String refreshToken) {
         ThrowUtils.throwIf(StringUtils.isEmpty(refreshToken), ErrorCode.PARAMS_ERROR, "刷新令牌不能为空");
         return ResultUtils.success(userService.refreshToken(refreshToken));
@@ -76,7 +77,7 @@ public class UserController {
      *
      * @return
      */
-    @PostMapping("/user/logout")
+    @PostMapping("/logout")
     public BaseResponse<String> logout(@RequestHeader("Authorization") String token) {
         userService.logout(token.substring(7));
         return ResultUtils.success("登出成功");
@@ -89,7 +90,7 @@ public class UserController {
      * @param userEditRequest
      * @return
      */
-    @PostMapping("/user/edit")
+    @PostMapping("/edit")
     public BaseResponse<String> editUser(@RequestBody UserEditRequest userEditRequest) {
         ThrowUtils.throwIf(ObjectUtils.isEmpty(userEditRequest), ErrorCode.PARAMS_ERROR, "请求参数为空");
         userService.editUser(userEditRequest);
@@ -102,7 +103,7 @@ public class UserController {
      *
      * @return
      */
-    @GetMapping("/user/info")
+    @GetMapping("/info")
     public BaseResponse<UserEditRequest> getUserInfo(@RequestHeader("Authorization") String token) {
         return ResultUtils.success(userService.getUserInfo());
     }
@@ -113,12 +114,12 @@ public class UserController {
      * @return
      */
     @IsAdmin
-    @GetMapping("/user/testAdmin")
+    @GetMapping("/testAdmin")
     public BaseResponse<String> testAdmin() {
         return ResultUtils.success("管理员, 您好!");
     }
 
-    @GetMapping("/user/homepage/info")
+    @GetMapping("/homepage/info")
     public BaseResponse<UserEditRequest> homepage(@RequestHeader("Authorization") String token) {
         return ResultUtils.success(userService.getUserInfo());
     }

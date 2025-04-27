@@ -1,7 +1,32 @@
 
-const contextPath = "/authcheckdemo/api"
+const contextPath = "/authcheckdemo/api/"
+const contextStatic = "/authcheckdemo/"
 
-// 使用 fetchWithToken 封装的 fetch 方法
+// 自动加载 Header 和 Footer
+document.addEventListener('DOMContentLoaded', function () {
+
+    // 加载 Header
+    fetch(contextStatic + '/pages/fragments/header.html')
+        .then(response => response.text())
+        .then(data => {
+            const header = document.getElementById('header-placeholder');
+            if (header) {
+                header.innerHTML = data;  // 如果页面中声明了 header-placeholder 才加载
+            }
+        });
+
+    // 加载 Footer
+    fetch(contextStatic + '/pages/fragments/footer.html')
+        .then(response => response.text())
+        .then(data => {
+            const footer = document.getElementById('footer-placeholder');
+            if (footer) {
+                footer.innerHTML = data;  // 如果页面中声明了 foot-placeholder 才加载
+            }
+        });
+});
+
+// 封装的 fetch 方法, 传入后端接口路径, 自动添加Authorization请求头发送请求, 获取 json 返回结果
 function fetchWithToken(url, options = {}) {
     //  调试日志:记录函数调用和请求 URL
     console.log("fetchWithToken called with URL:", url);
