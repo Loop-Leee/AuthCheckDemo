@@ -11,16 +11,17 @@
 <body>
 <div th:replace="fragments/header :: header"></div>
 
-<div class="container">
+<div class="container d-flex flex-column">
     <div class="greeting" id="greetingText">你好，游客</div>
 
     <div class="userinfo" id="userInfo">
-        <p>账号：-</p>
-        <p>登录时间：-</p>
+        <p>请进行登录认证</p>
     </div>
 
-    <div class="actions">
-        <button class="btn btn-dark w-100" onclick="alert('暂未开放')">修改密码</button>
+    <!-- 操作按钮区域 -->
+    <div class="actions sticky-footer">
+        <p class="greeting" id="dailyQuote" onclick="getDailyQuote()">~~~</p>
+        <button class="btn btn-dark w-100" id="boringButton" onclick="boringFeedback()">无聊可以点我,虽然我没什么用</button>
         <button class="btn btn-danger w-100" onclick="logout()">退出登录</button>
     </div>
 </div>
@@ -28,6 +29,33 @@
 <div th:replace="fragments/footer :: footer"></div>
 
 <script th:inline="javascript">
+
+    document.addEventListener("DOMContentLoaded", function () {
+        getDailyQuote();
+    });
+
+    function getDailyQuote() {
+        const quotes = [
+            "「欢迎回来，咖啡已自动续杯~」",
+            "检测到微笑表情！今日快乐指数+10%✨」",
+            "「电量满格！这次要探索哪个新宇宙？」",
+            "「你的专属BGM已响起：🎵__欢迎光临__🎵」",
+            "「紧急播报：您有【未拆封的好心情】待领取！」",
+            "「空气沙发已充气，请选择降落姿势——😌/🤸/🛌」",
+            "「温馨提示：本界面支持脑电波输入」",
+            "「电量已充满，好奇心充到200%了吗？🔋」"
+        ];
+
+        const dailyQuote = document.getElementById('dailyQuote');
+        const randomIndex = Math.floor(Math.random() * quotes.length);
+        dailyQuote.textContent = quotes[randomIndex];
+    }
+
+    // 修改密码按钮点击事件
+    function boringFeedback() {
+        // 将按键上的文字替换为 "你好无聊"
+        document.getElementById("boringButton").textContent = "你好无聊";
+    }
 
     // 退出登录按钮点击事件
     function logout() {
@@ -59,14 +87,14 @@
                 return response.data;
             })
             .then(data => {
-                if(!data || !data.username) {
+                if(!data || !data.account) {
                     throw new Error("用户信息不完整");
                 }
                 const greeting = getGreeting();
                 document.getElementById("greetingText").textContent = `${greeting}好，${data.username}`;
                 document.getElementById("userInfo").innerHTML = `
                     <p>账号：${data.account}</p>
-                    <p>用户名：${data.username}</p>
+                    <p>邮箱：${data.email}</p>
                 `;
             }).catch(error => {
             alert("获取用户信息失败：" + error.message);
