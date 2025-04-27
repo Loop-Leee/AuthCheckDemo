@@ -6,27 +6,31 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto" id="navbarItems">
                     <li class="nav-item">
                         <a class="nav-link" th:href="@{/}">首页</a>
                     </li>
-                    <li class="nav-item" sec:authorize="isAuthenticated()">
-                        <a class="nav-link" th:href="@{/user/infopage}">个人信息</a>
+                    <li class="nav-item" id="headerHomepage" style="display: none;">
+                        <a class="nav-link" th:href="@{/user/homepage}">个人主页</a>
                     </li>
-                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                        <a class="nav-link" th:href="@{/user/testAdmin}">管理员测试</a>
+                    <li class="nav-item" id="headerEditInfo" style="display: none;">
+                        <a class="nav-link" th:href="@{/user/infopage}">编辑信息</a>
                     </li>
-                    <li class="nav-item" sec:authorize="isAuthenticated()">
-                        <a class="nav-link" th:href="@{/user/logout}">退出登录</a>
+                    <li class="nav-item" id="headerAdminPage" style="display: none;">
+                        <a class="nav-link" th:href="@{/user/testAdmin}">管理员界面</a>
                     </li>
-                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <li class="nav-item" id="headerLogin" style="display: none;">
                         <a class="nav-link" th:href="@{/auth/login}">登录</a>
                     </li>
-                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <li class="nav-item" id="headerRegister" style="display: none;">
                         <a class="nav-link" th:href="@{/auth/register}">注册</a>
+                    </li>
+                    <li class="nav-item" id="headerLogout" style="display: none;">
+                        <a class="nav-link" th:href="@{/}">登出</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
+    <script th:src="@{/js/common/header.js}"></script>
 </header>

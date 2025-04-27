@@ -1,4 +1,3 @@
-
 const contextPath = "/authcheckdemo/api/"
 const contextStatic = "/authcheckdemo/"
 
@@ -34,8 +33,8 @@ function fetchWithToken(url, options = {}) {
     const token = localStorage.getItem("accessToken");
     // Token检查：如果不存在Token则跳转到登录页面
     if (!token) {
-        alert("未登录或 Token 失效，请重新登录！");
-        window.location.href = "/index.html";
+        alert("请重新登录！");
+        window.location.href = contextStatic + "index";
         return Promise.reject("Token missing");
     }
 
@@ -47,21 +46,21 @@ function fetchWithToken(url, options = {}) {
             "Content-Type": "application/json" // 固定内容类型为 JSON
         },
     })
-    .then(response => {
-        // 2xx状态码: 解析并返回 JSON 数据
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error(`请求失败: ${response.status}`);
-        }
-    })
-    .catch(error => {
-        // 统一错误处理：提示用户并跳转登录页
-        alert("获取用户信息失败：" + error.message);
-        console.error('获取用户信息请求失败：', error.message);
-        // 跳转到登录页面（注意：contextPath需要根据实际项目配置）
-        window.location.href = contextPath + "/auth/login";
-        // 继续传递错误以便链式调用可以处理
-        return Promise.reject(error);
-    })
+        .then(response => {
+            // 2xx状态码: 解析并返回 JSON 数据
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error(`请求失败: ${response.status}`);
+            }
+        })
+        .catch(error => {
+            // 统一错误处理：提示用户并跳转登录页
+            alert("获取用户信息失败：" + error.message);
+            console.error('获取用户信息请求失败：', error.message);
+            // 跳转到登录页面（注意：contextPath需要根据实际项目配置）
+            window.location.href = contextPath + "/auth/login";
+            // 继续传递错误以便链式调用可以处理
+            return Promise.reject(error);
+        })
 }
