@@ -5,6 +5,7 @@
     <title>用户注册</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/common/utils.js}"></script>
 </head>
 <body>
 <div th:replace="fragments/header :: header"></div>
@@ -17,21 +18,18 @@
                     <h4 class="mb-0">用户注册</h4>
                 </div>
                 <div class="card-body">
-                    <form th:action="@{/user/register}" th:object="${userRegisterRequest}" method="post">
+                    <form method="post" onsubmit="return register(event)">
                         <div class="mb-3">
                             <label for="account" class="form-label">用户名</label>
-                            <input type="text" class="form-control" id="account" th:field="*{account}" required>
-                            <div class="text-danger" th:if="${#fields.hasErrors('account')}" th:errors="*{account}"></div>
+                            <input type="text" class="form-control" id="account" name="account" required>
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">密码</label>
-                            <input type="password" class="form-control" id="password" th:field="*{userPassword}" required>
-                            <div class="text-danger" th:if="${#fields.hasErrors('userPassword')}" th:errors="*{userPassword}"></div>
+                            <input type="password" class="form-control" id="password" name="password" required>
                         </div>
                         <div class="mb-3">
-                            <label for="checkPassword" class="form-label">确认密码</label>
-                            <input type="password" class="form-control" id="checkPassword" th:field="*{checkPassword}" required>
-                            <div class="text-danger" th:if="${#fields.hasErrors('checkPassword')}" th:errors="*{checkPassword}"></div>
+                            <label for="checkPassword" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="checkPassword" name="checkPassword" required>
                         </div>
                         <button type="submit" class="btn btn-dark w-100">注册</button>
                     </form>
@@ -47,5 +45,42 @@
 <div th:replace="fragments/footer :: footer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+
+    function register(event) {
+        event.preventDefault(); // 阻止表单默认提交行为
+
+        const account = document.getElementById("account").value;
+        const password = document.getElementById("password").value;
+        const checkPassword = document.getElementById("checkPassword").value;
+
+        fetch(contextPath + "user/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                account: account,
+                userPassword: password,
+                checkPassword: checkPassword
+            })
+        })
+            .then(response => {
+                if (!response.ok) throw new Error("注册失败");
+                return response.json();
+            })
+            .then(responseBody => {
+                if (responseBody.code !== 0) throw new Error(responseBody.message || "注册失败");
+                localStorage.setItem("accessToken", responseBody.data.accessToken);
+                window.location.href = contextStatic + "user/homepage";
+            })
+            .catch(error => {
+                alert("注册失败：" + error.message);
+            });
+
+        return false;
+    }
+</script>
 </body>
 </html>

@@ -49,8 +49,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 1. 创建用户
         User user = new User();
         user.setAccount(account);
-        userPassword = BCrypt.hashpw(userPassword, BCrypt.gensalt(8));
-        user.setPassword(userPassword);
+        String encodePassword = BCrypt.hashpw(userPassword, BCrypt.gensalt(8));
+        user.setPassword(encodePassword);
         userMapper.insert(user);
 
         // 2. 注册后自动登录
