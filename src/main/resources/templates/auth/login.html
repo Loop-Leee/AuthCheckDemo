@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户登录</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" th:href="@{/css/style.css}">
@@ -13,21 +14,30 @@
 <div class="container mt-5 content">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card shadow">
+            <div class="card shadow fade-in">
                 <div class="card-header bg-dark text-white">
                     <h4 class="mb-0">用户登录</h4>
                 </div>
                 <div class="card-body">
-                    <form method="post" onsubmit="return login(event)">
+                    <form id="loginForm" method="post" onsubmit="return handleLogin(event)">
                         <div class="mb-3">
                             <label for="account" class="form-label">用户名</label>
-                            <input type="text" class="form-control" id="account" name="account" required>
+                            <input type="text" class="form-control" id="account" name="account" required
+                                   placeholder="请输入用户名">
+                            <div class="invalid-feedback">请输入用户名</div>
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">密码</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
+                            <input type="password" class="form-control" id="password" name="password" required
+                                   placeholder="请输入密码">
+                            <div class="invalid-feedback">请输入密码</div>
                         </div>
-                        <button type="submit" class="btn btn-dark w-100">登录</button>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-dark" id="loginButton">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                登录
+                            </button>
+                        </div>
                     </form>
                 </div>
                 <div class="card-footer text-center">
@@ -42,42 +52,70 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-
 <script th:inline="javascript">
-
-    function login(event) {
-        event.preventDefault(); // 阻止表单默认提交行为
-
-        const account = document.getElementById("account").value;
-        const password = document.getElementById("password").value;
-
-        fetch(contextPath + "user/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                account: account,
-                password: password
-            })
-        })
-            .then(response => {
-                if (!response.ok) throw new Error("登录失败");
-                return response.json();
-            })
-            .then(responseBody => {
-                if (responseBody.code !== 0) throw new Error(responseBody.message || "登录失败");
-                localStorage.setItem("accessToken", responseBody.data.accessToken);
-                window.location.href = contextStatic + "user/homepage"; // 修改跳转路径为 /user/homepage
-            })
-            .catch(error => {
-                alert("登录失败：" + error.message);
+    async function handleLogin(event) {
+        event.preventDefault();
+        
+        const form = document.getElementById('loginForm');
+        const loginButton = document.getElementById('loginButton');
+        const spinner = loginButton.querySelector('.spinner-border');
+        
+        // 表单验证
+        if (!utils.validateForm(form)) {
+            return false;
+        }
+        
+        // 显示加载状态
+        loginButton.disabled = true;
+        spinner.classList.remove('d-none');
+        
+        try {
+            const account = document.getElementById('account').value;
+            const password = document.getElementById('password').value;
+            
+            const response = await fetch(contextPath + 'user/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    account: account,
+                    password: password
+                })
             });
-
+            
+            if (!response.ok) {
+                throw new Error('登录失败');
+            }
+            
+            const responseBody = await response.json();
+            
+            if (responseBody.code !== 0) {
+                throw new Error(responseBody.message || '登录失败');
+            }
+            
+            // 保存token
+            localStorage.setItem('accessToken', responseBody.data.accessToken);
+            
+            // 显示成功消息
+            utils.showSuccess('登录成功', form);
+            
+            // 延迟跳转，让用户看到成功消息
+            setTimeout(() => {
+                window.location.href = contextStatic + 'user/homepage';
+            }, 1000);
+            
+        } catch (error) {
+            console.error('登录失败:', error);
+            utils.showError('登录失败: ' + error.message, form);
+        } finally {
+            // 恢复按钮状态
+            loginButton.disabled = false;
+            spinner.classList.add('d-none');
+        }
+        
         return false;
     }
 </script>
-
-
 </body>
 </html>
