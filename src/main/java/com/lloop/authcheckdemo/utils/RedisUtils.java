@@ -1,22 +1,17 @@
 package com.lloop.authcheckdemo.utils;
 
-import cn.hutool.core.lang.Dict;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.lloop.authcheckdemo.model.domain.User;
-import com.lloop.authcheckdemo.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.Cursor;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
-import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * @Author lloop
@@ -27,12 +22,32 @@ import java.util.concurrent.TimeUnit;
 public class RedisUtils {
 
     @Resource
-    private RedisTemplate redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
 
     // Redis prefix
     public static final String USER_REFRESH_TOKEN = "user:login:refresh:";
     public static final String TOKEN_BLACKLIST = "user:blacklist:";
 
+    private static final String ERROR_KEY_NULL = "key不能为空";
+    private static final String ERROR_VALUE_NULL = "value不能为空";
+    private static final String ERROR_TIME_NEGATIVE = "time必须大于0";
+
+    /**
+     * 执行Redis操作的模板方法
+     * @param operation Redis操作
+     * @param defaultValue 默认返回值
+     * @return 操作结果
+     */
+    private <T> T executeWithConnection(Supplier<T> operation, T defaultValue) {
+        try {
+            return operation.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return defaultValue;
+        } finally {
+            RedisConnectionUtils.unbindConnection(Objects.requireNonNull(redisTemplate.getConnectionFactory()));
+        }
+    }
 
     /**
      * 移除Redis前缀
@@ -41,6 +56,8 @@ public class RedisUtils {
      * @return
      */
     public String removePrefix(String key, String prefix){
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.hasText(prefix, "prefix不能为空");
         return key.substring(prefix.length());
     }
 
@@ -50,17 +67,13 @@ public class RedisUtils {
      * @param key  键
      * @param time 时间(秒)
      */
-    public void expire(String key, long time) {
-
-        if (time > 0) {
-            try {
-                redisTemplate.expire(key, time, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                extracted();
-            }
-        }
+    public boolean expire(String key, long time) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.isTrue(time > 0, ERROR_TIME_NEGATIVE);
+        return executeWithConnection(() -> {
+            redisTemplate.expire(key, time, TimeUnit.SECONDS);
+            return true;
+        }, false);
     }
 
     /**
@@ -70,14 +83,11 @@ public class RedisUtils {
      * @return 时间(秒) 返回0代表为永久有效
      */
     public Long getExpire(String key) {
-        try {
-            return redisTemplate.getExpire(key, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.getExpire(key, TimeUnit.SECONDS),
+            null
+        );
     }
 
     /**
@@ -87,73 +97,28 @@ public class RedisUtils {
      * @return true 存在 false不存在
      */
     public Boolean hasKey(String key) {
-        try {
-            return redisTemplate.hasKey(key);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.hasKey(key),
+            false
+        );
     }
 
     /**
      * 删除缓存
      *
-     * @param key 可以传一个值 或多个
+     * @param keys 可以传一个值 或多个
      */
-    public void del(String... key) {
-        if (key != null && key.length > 0) {
-            if (key.length == 1) {
-                try {
-                    redisTemplate.delete(key[0]);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    extracted();
-                }
+    public void delete(String... keys) {
+        Assert.notEmpty(keys, "keys不能为空");
+        executeWithConnection(() -> {
+            if (keys.length == 1) {
+                redisTemplate.delete(keys[0]);
             } else {
-                try {
-                    redisTemplate.delete(CollectionUtils.arrayToList(key));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    extracted();
-                }
+                redisTemplate.delete(Arrays.asList(keys));
             }
-        }
-    }
-
-    /**
-     * 删除缓存
-     *
-     * @param key 键
-     */
-    public void del(Collection<Object> key) {
-        try {
-            redisTemplate.delete(key);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            extracted();
-        }
-    }
-
-    /**
-     * 删除缓存
-     *
-     * @param key 可以传一个值 或多个
-     */
-    public void del(String key) {
-        if (key != null) {
-            try {
-                redisTemplate.delete(key);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                extracted();
-            }
-        }
+            return null;
+        }, null);
     }
 
     // ============================String=============================
@@ -165,20 +130,14 @@ public class RedisUtils {
      * @return 值
      */
     public <T> T get(String key) {
-        if (key == null) {
-            return null;
-        } else {
-            ValueOperations<String, T> operation;
-            try {
-                operation = redisTemplate.opsForValue();
-                return operation.get(key);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            } finally {
-                extracted();
-            }
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> {
+                ValueOperations<String, Object> ops = redisTemplate.opsForValue();
+                return (T) ops.get(key);
+            },
+            null
+        );
     }
 
     /**
@@ -189,15 +148,15 @@ public class RedisUtils {
      * @return true成功 false失败
      */
     public boolean set(String key, Object value) {
-        try {
-            redisTemplate.opsForValue().set(key, value);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForValue().set(key, value);
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -209,19 +168,17 @@ public class RedisUtils {
      * @return true成功 false 失败
      */
     public boolean set(String key, Object value, long time) {
-
-        if (time > 0) {
-            try {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        Assert.isTrue(time > 0, ERROR_TIME_NEGATIVE);
+        
+        return executeWithConnection(
+            () -> {
                 redisTemplate.opsForValue().set(key, value, time, TimeUnit.MINUTES);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                extracted();
-            }
-        } else {
-            set(key, value);
-        }
-        return true;
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -232,17 +189,12 @@ public class RedisUtils {
      * @return long
      */
     public Long incr(String key, long delta) {
-        if (delta < 0) {
-            throw new RuntimeException("递增因子必须大于0");
-        }
-        try {
-            return redisTemplate.opsForValue().increment(key, delta);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.isTrue(delta > 0, "递增因子必须大于0");
+        return executeWithConnection(
+            () -> redisTemplate.opsForValue().increment(key, delta),
+            0L
+        );
     }
 
     /**
@@ -253,17 +205,12 @@ public class RedisUtils {
      * @return long
      */
     public Long decr(String key, long delta) {
-        if (delta < 0) {
-            throw new RuntimeException("递减因子必须大于0");
-        }
-        try {
-            return redisTemplate.opsForValue().increment(key, -delta);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.isTrue(delta > 0, "递减因子必须大于0");
+        return executeWithConnection(
+            () -> redisTemplate.opsForValue().increment(key, -delta),
+            0L
+        );
     }
 
     // ================================Map=================================
@@ -276,14 +223,12 @@ public class RedisUtils {
      * @return 值
      */
     public Object hGet(String key, String item) {
-        try {
-            return redisTemplate.opsForHash().get(key, item);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.hasText(item, "item不能为空");
+        return executeWithConnection(
+            () -> redisTemplate.opsForHash().get(key, item),
+            null
+        );
     }
 
     /**
@@ -293,33 +238,30 @@ public class RedisUtils {
      * @return 对应的多个键值
      */
     public Map<Object, Object> hMGet(String key) {
-        try {
-            return redisTemplate.opsForHash().entries(key);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Collections.emptyMap();
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForHash().entries(key),
+            Collections.emptyMap()
+        );
     }
 
     /**
      * HashSet
      *
      * @param key 键
-     * @param map 对应多个键值
-     * @return true 成功 false 失败
+     * @param map 需要输入的多个 <field, value>
+     * @return boolean 输入结果
      */
     public boolean hMSet(String key, Map<String, Object> map) {
-        try {
-            redisTemplate.opsForHash().putAll(key, map);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notEmpty(map, "map不能为空");
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForHash().putAll(key, map);
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -331,18 +273,17 @@ public class RedisUtils {
      * @return true成功 false失败
      */
     public boolean hMSet(String key, Map<String, Object> map, long time) {
-        try {
-            redisTemplate.opsForHash().putAll(key, map);
-            if (time > 0) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notEmpty(map, "map不能为空");
+        Assert.isTrue(time > 0, ERROR_TIME_NEGATIVE);
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForHash().putAll(key, map);
                 expire(key, time);
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -354,15 +295,16 @@ public class RedisUtils {
      * @return true 成功 false失败
      */
     public boolean hSet(String key, String item, Object value) {
-        try {
-            redisTemplate.opsForHash().put(key, item, value);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.hasText(item, "item不能为空");
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForHash().put(key, item, value);
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -375,18 +317,18 @@ public class RedisUtils {
      * @return true 成功 false失败
      */
     public boolean hSet(String key, String item, Object value, long time) {
-        try {
-            redisTemplate.opsForHash().put(key, item, value);
-            if (time > 0) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.hasText(item, "item不能为空");
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        Assert.isTrue(time > 0, ERROR_TIME_NEGATIVE);
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForHash().put(key, item, value);
                 expire(key, time);
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -395,14 +337,16 @@ public class RedisUtils {
      * @param key  键 不能为null
      * @param item 项 可以使多个 不能为null
      */
-    public void hDel(String key, Object... item) {
-        try {
-            redisTemplate.opsForHash().delete(key, item);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            extracted();
-        }
+    public void hDel(String key, Object... items) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notEmpty(items, "items不能为空");
+        executeWithConnection(
+            () -> {
+                redisTemplate.opsForHash().delete(key, items);
+                return null;
+            },
+            null
+        );
     }
 
     /**
@@ -413,14 +357,12 @@ public class RedisUtils {
      * @return true 存在 false不存在
      */
     public boolean hHasKey(String key, String item) {
-        try {
-            return redisTemplate.opsForHash().hasKey(key, item);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            extracted();
-        }
-        return false;
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.hasText(item, "item不能为空");
+        return executeWithConnection(
+            () -> redisTemplate.opsForHash().hasKey(key, item),
+            false
+        );
     }
 
     /**
@@ -432,15 +374,13 @@ public class RedisUtils {
      * @return Double
      */
     public Double hIncr(String key, String item, double by) {
-        Double increment = null;
-        try {
-            increment = redisTemplate.opsForHash().increment(key, item, by);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            extracted();
-        }
-        return increment;
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.hasText(item, "item不能为空");
+        Assert.isTrue(by > 0, "递增因子必须大于0");
+        return executeWithConnection(
+            () -> redisTemplate.opsForHash().increment(key, item, by),
+            null
+        );
     }
 
     /**
@@ -452,32 +392,29 @@ public class RedisUtils {
      * @return Double
      */
     public Double hDecr(String key, String item, double by) {
-        try {
-            return redisTemplate.opsForHash().increment(key, item, -by);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.hasText(item, "item不能为空");
+        Assert.isTrue(by > 0, "递减因子必须大于0");
+        return executeWithConnection(
+            () -> redisTemplate.opsForHash().increment(key, item, -by),
+            null
+        );
     }
 
-    /***
+    /**
      * 获取所有值
      * @param key key
      * @param options options 查询条件 ScanOptions.scanOptions().count(2l).match("space*").build()
      * @return Cursor 迭代器方式获取数据 while(cursor.hasNext()){ Map.Entry<HK, HV> map = cursor.next(); HK key = map.getKey()
      * ; HV value = map.getValue();}
      */
-    public <HK, HV> Cursor<Map.Entry<HK, HV>> hScan(String key, ScanOptions options) {
-        try {
-            return redisTemplate.opsForHash().scan(key, options);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+    public Cursor<Map.Entry<Object, Object>> hScan(String key, ScanOptions options) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(options, "options不能为空");
+        return executeWithConnection(
+            () -> redisTemplate.opsForHash().scan(key, options),
+            null
+        );
     }
 
     // ============================set=============================
@@ -488,15 +425,12 @@ public class RedisUtils {
      * @param key 键
      * @return 结果集合
      */
-    public <T> Set<T> sGet(String key) {
-        try {
-            return redisTemplate.opsForSet().members(key);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+    public Set<Object> sGet(String key) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForSet().members(key),
+            Collections.emptySet()
+        );
     }
 
     /**
@@ -507,14 +441,12 @@ public class RedisUtils {
      * @return true 存在 false不存在
      */
     public Boolean sHasKey(String key, Object value) {
-        try {
-            return redisTemplate.opsForSet().isMember(key, value);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForSet().isMember(key, value),
+            false
+        );
     }
 
     /**
@@ -525,18 +457,12 @@ public class RedisUtils {
      * @return 成功个数
      */
     public Long sSet(String key, Object... values) {
-        try {
-            return redisTemplate.opsForSet().add(key, Objects.requireNonNull(values));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        } finally {
-            extracted();
-        }
-    }
-
-    private void extracted() {
-        RedisConnectionUtils.unbindConnection(Objects.requireNonNull(redisTemplate.getConnectionFactory()));
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notEmpty(values, "values不能为空");
+        return executeWithConnection(
+            () -> redisTemplate.opsForSet().add(key, values),
+            0L
+        );
     }
 
     /**
@@ -548,18 +474,17 @@ public class RedisUtils {
      * @return 成功个数
      */
     public Long sSetAndTime(String key, long time, Object... values) {
-        try {
-            Long count = redisTemplate.opsForSet().add(key, values);
-            if (time > 0) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notEmpty(values, "values不能为空");
+        Assert.isTrue(time > 0, ERROR_TIME_NEGATIVE);
+        return executeWithConnection(
+            () -> {
+                Long count = redisTemplate.opsForSet().add(key, values);
                 expire(key, time);
-            }
-            return count;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        } finally {
-            extracted();
-        }
+                return count;
+            },
+            0L
+        );
     }
 
     /**
@@ -569,14 +494,11 @@ public class RedisUtils {
      * @return Long
      */
     public Long sGetSetSize(String key) {
-        try {
-            return redisTemplate.opsForSet().size(key);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForSet().size(key),
+            null
+        );
     }
 
     /**
@@ -587,14 +509,12 @@ public class RedisUtils {
      * @return 移除的个数
      */
     public Long sRem(String key, Object... values) {
-        try {
-            return redisTemplate.opsForSet().remove(key, values);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notEmpty(values, "values不能为空");
+        return executeWithConnection(
+            () -> redisTemplate.opsForSet().remove(key, values),
+            0L
+        );
     }
 
     // ============================zSet=============================
@@ -606,14 +526,11 @@ public class RedisUtils {
      * @return 个数
      */
     public Long zSetSize(String key) {
-        try {
-            return redisTemplate.opsForZSet().size(key);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForZSet().size(key),
+            0L
+        );
     }
 
     /**
@@ -623,8 +540,8 @@ public class RedisUtils {
      * @param values field
      * @return 添加是否成功
      */
-    public Boolean zSetAdd(String key, Object values) {
-        return zSetAdd(key, values, System.currentTimeMillis());
+    public Boolean zSetAdd(String key, Object value) {
+        return zSetAdd(key, value, System.currentTimeMillis());
     }
 
     /**
@@ -636,14 +553,13 @@ public class RedisUtils {
      * @return 添加是否成功
      */
     public Boolean zSetAdd(String key, Object value, Long score) {
-        try {
-            return redisTemplate.opsForZSet().add(key, value, score);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        Assert.notNull(score, "score不能为空");
+        return executeWithConnection(
+            () -> redisTemplate.opsForZSet().add(key, value, score),
+            false
+        );
     }
 
     /**
@@ -652,7 +568,7 @@ public class RedisUtils {
      * @param key 键
      * @return 值集合
      */
-    public <T> Set<ZSetOperations.TypedTuple<T>> getZSetWithScores(String key) {
+    public Set<ZSetOperations.TypedTuple<Object>> getZSetWithScores(String key) {
         return getZSetWithScores(key, 0, -1);
     }
 
@@ -664,17 +580,13 @@ public class RedisUtils {
      * @param end   结束位置
      * @return 值集合
      */
-    public <T> Set<ZSetOperations.TypedTuple<T>> getZSetWithScores(String key, long start, long end) {
-        try {
-            return (Set<ZSetOperations.TypedTuple<T>>) redisTemplate.opsForZSet().rangeWithScores(key, start, end);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+    public Set<ZSetOperations.TypedTuple<Object>> getZSetWithScores(String key, long start, long end) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForZSet().rangeWithScores(key, start, end),
+            Collections.emptySet()
+        );
     }
-
 
     /**
      * 获取指定类型的zSet正序结果集合
@@ -685,21 +597,18 @@ public class RedisUtils {
      * @param <R>   结果类型 <warn> 注意：redis序列化 使得Long存储为字符串类型 ，取出时不能通过 R直接转换为Long类型结合</warn>
      * @return 集合结果
      */
-    public <R> List<R> getZSetResults(String key, long start, long end) {
-        try {
-            if (0 == zSetSize(key)) {
-                return new ArrayList<R>(0);
-            }
-            return new ArrayList<R>
-                    (Objects.requireNonNull(redisTemplate.opsForZSet().range(key, start, end)));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Collections.EMPTY_LIST;
-        } finally {
-            extracted();
-        }
+    public List<Object> getZSetResults(String key, long start, long end) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> {
+                if (zSetSize(key) == 0) {
+                    return new ArrayList<>(0);
+                }
+                return new ArrayList<>(redisTemplate.opsForZSet().range(key, start, end));
+            },
+            Collections.emptyList()
+        );
     }
-
 
     /**
      * 获取指定类型的zSet倒序结果集合 （排行使用）
@@ -710,37 +619,44 @@ public class RedisUtils {
      * @param <R>   结果类型 <warn> 注意：redis序列化 使得Long存储为字符串类型 ，取出时不能通过 R直接转换为Long类型结合</warn>
      * @return 集合结果
      */
-    public <R> List<R> getReverseZSetResults(String key, long start, long end) {
-        try {
-            if (0 == zSetSize(key)) {
-                return new ArrayList<R>(0);
-            }
-            return new ArrayList<R>
-                    (Objects.requireNonNull(redisTemplate.opsForZSet().reverseRange(key, start, end)));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Collections.EMPTY_LIST;
-        } finally {
-            extracted();
-        }
+    public List<Object> getReverseZSetResults(String key, long start, long end) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> {
+                if (zSetSize(key) == 0) {
+                    return new ArrayList<>(0);
+                }
+                return new ArrayList<>(redisTemplate.opsForZSet().reverseRange(key, start, end));
+            },
+            Collections.emptyList()
+        );
     }
 
-
-    public <T> Set<T> getReverseZSet(String key) {
-        try {
-            return (Set<T>) redisTemplate.opsForZSet().reverseRange(key, 0, -1);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+    /**
+     * 获取倒序zSet
+     */
+    public Set<Object> getReverseZSet(String key) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForZSet().reverseRange(key, 0, -1),
+            Collections.emptySet()
+        );
     }
 
-    public void removeZSet(String key, Object values) {
-        redisTemplate.opsForZSet().remove(key, values);
+    /**
+     * 移除zSet中的值
+     */
+    public void removeZSet(String key, Object value) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        executeWithConnection(
+            () -> {
+                redisTemplate.opsForZSet().remove(key, value);
+                return null;
+            },
+            null
+        );
     }
-
 
     // ===============================list=================================
 
@@ -753,14 +669,11 @@ public class RedisUtils {
      * @return
      */
     public List<Object> lGet(String key, long start, long end) {
-        try {
-            return redisTemplate.opsForList().range(key, start, end);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForList().range(key, start, end),
+            Collections.emptyList()
+        );
     }
 
     /**
@@ -770,14 +683,11 @@ public class RedisUtils {
      * @return long
      */
     public long lGetListSize(String key) {
-        try {
-            return Objects.requireNonNull(redisTemplate.opsForList().size(key));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForList().size(key),
+            0L
+        );
     }
 
     /**
@@ -788,14 +698,11 @@ public class RedisUtils {
      * @return Object
      */
     public Object lGetIndex(String key, long index) {
-        try {
-            return redisTemplate.opsForList().index(key, index);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForList().index(key, index),
+            null
+        );
     }
 
     /**
@@ -806,15 +713,15 @@ public class RedisUtils {
      * @return
      */
     public boolean lSet(String key, Object value) {
-        try {
-            redisTemplate.opsForList().rightPush(key, value);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForList().rightPush(key, value);
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -826,18 +733,17 @@ public class RedisUtils {
      * @return boolean
      */
     public boolean lSet(String key, Object value, long time) {
-        try {
-            redisTemplate.opsForList().rightPush(key, value);
-            if (time > 0) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        Assert.isTrue(time > 0, ERROR_TIME_NEGATIVE);
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForList().rightPush(key, value);
                 expire(key, time);
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -848,15 +754,15 @@ public class RedisUtils {
      * @return boolean
      */
     public boolean lSet(String key, List<Object> value) {
-        try {
-            redisTemplate.opsForList().rightPushAll(key, value);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notEmpty(value, "value不能为空");
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForList().rightPushAll(key, value);
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -867,19 +773,18 @@ public class RedisUtils {
      * @param time  时间(秒)
      * @return Boolean
      */
-    public Boolean lSet(String key, List<Object> value, long time) {
-        try {
-            redisTemplate.opsForList().rightPushAll(key, value);
-            if (time > 0) {
+    public boolean lSet(String key, List<Object> value, long time) {
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notEmpty(value, "value不能为空");
+        Assert.isTrue(time > 0, ERROR_TIME_NEGATIVE);
+        return executeWithConnection(
+            () -> {
+                redisTemplate.opsForList().rightPushAll(key, value);
                 expire(key, time);
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            extracted();
-        }
+                return true;
+            },
+            false
+        );
     }
 
     /**
@@ -890,13 +795,15 @@ public class RedisUtils {
      * @param value 值
      */
     public void lUpdateIndex(String key, long index, Object value) {
-        try {
-            redisTemplate.opsForList().set(key, index, value);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        executeWithConnection(
+            () -> {
+                redisTemplate.opsForList().set(key, index, value);
+                return null;
+            },
+            null
+        );
     }
 
     /**
@@ -908,14 +815,12 @@ public class RedisUtils {
      * @return 移除的个数
      */
     public Long lRemove(String key, long count, Object value) {
-        try {
-            return redisTemplate.opsForList().remove(key, count, value);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            extracted();
-        }
+        Assert.hasText(key, ERROR_KEY_NULL);
+        Assert.notNull(value, ERROR_VALUE_NULL);
+        return executeWithConnection(
+            () -> redisTemplate.opsForList().remove(key, count, value),
+            null
+        );
     }
 
     /**
@@ -924,14 +829,16 @@ public class RedisUtils {
      * @param oldKey oldKey
      * @param newKey newKey
      */
-    public void renamKey(String oldKey, String newKey) {
-        try {
-            redisTemplate.rename(oldKey, newKey);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            extracted();
-        }
+    public void renameKey(String oldKey, String newKey) {
+        Assert.hasText(oldKey, "oldKey不能为空");
+        Assert.hasText(newKey, "newKey不能为空");
+        executeWithConnection(
+            () -> {
+                redisTemplate.rename(oldKey, newKey);
+                return null;
+            },
+            null
+        );
     }
 
     /**
